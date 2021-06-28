@@ -5,7 +5,7 @@
 ``` bash
 git clone https://github.com/amusfq/sistem-informasi-mahasiswa.git
 ```
-2. Import file __db.sql__ ke database
+2. Import file __sql/db.sql__ ke database
 3. Sesuaikan file _config/db.php_ dengan konfigurasi anda
 
 ```php
