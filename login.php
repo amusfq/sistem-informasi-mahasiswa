@@ -1,30 +1,53 @@
 <?php
 session_start();
 $error = false;
-if (isset($_SESSION['nim'])) {
+if (isset($_SESSION['id_user'])) {
   header("location: index.php");
 } else {
   $submit = @$_POST['submit'];
-  $nim = @$_POST['nim'];
+  $username = @$_POST['username'];
   $password = @$_POST['password'];
   $encodedPassword = md5($password);
   if (isset($submit)) {
-    if($nim == '' || $password == '') {
+    if($username == '' || $password == '') {
       $error = true;
     } else {
       include_once('./config/db.php');
-      $query = "SELECT biodata.nim, biodata.nama_lengkap, prodi.nama_prodi FROM biodata ";
-      $query .= "LEFT JOIN prodi ON biodata.id_prodi = prodi.id ";
-      $query .= "WHERE nim='$nim' AND password='$encodedPassword'";
+      $query = "SELECT users.id, roles.nama_role FROM users ";
+      $query .= "LEFT JOIN roles ON roles.id = users.id_role ";
+      $query .= "WHERE username='$username' AND password='$encodedPassword'";
       $result = $connect->query($query);
       if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
-        $_SESSION['nim'] = $user['nim'];
-        $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
-        $_SESSION['nama_prodi'] = $user['nama_prodi'];
-        header("location: index.php");
+        $id_user = $user['id'];
+        $role = $user['nama_role'];
+        $query = "SELECT nama_lengkap, status FROM biodata WHERE id_user = '$id_user'";
+        $result = $connect->query($query);
+        if ($result->num_rows > 0) {
+          $biodata = $result->fetch_assoc();
+          if ($biodata['status']) {
+            $_SESSION['id_user'] = $id_user;
+            $_SESSION['nama_lengkap'] = $biodata['nama_lengkap'];
+            $_SESSION['role'] = $role;
+            if ($role === 'mahasiswa') {
+              $query = "SELECT prodi.nama_prodi FROM mahasiswa ";
+              $query .= "LEFT JOIN prodi ON prodi.id = mahasiswa.id_prodi ";
+              $query .= "WHERE id_user = '$id_user'";
+              $result = $connect->query($query);
+              if ($result->num_rows > 0) {
+                $prodi = $result->fetch_assoc();
+                $_SESSION['nama_prodi'] = $prodi['nama_prodi'];
+              }
+            }
+            header("location: index.php");
+          } else {
+            $error = true;
+            $errorText = "Akun ini tidak aktif, silahkan hubungi administrator";
+          }
+        }
       } else {
         $error = true;
+        $errorText = "NIM atau password salah";
       }
     }
   }
@@ -81,15 +104,15 @@ if (isset($_SESSION['nim'])) {
             ?>
             <div class="alert alert-danger d-flex align-items-center" role="alert">
               <i class="fas fa-exclamation-triangle bi flex-shrink-0 me-2" width="24" height="24"></i>
-              <div><strong>Gagal!</strong> NIM atau password salah</div>
+              <div><strong>Gagal!</strong> <?= $errorText ?></div>
             </div>
             <?php 
               }
             ?>
             <form method="POST">
               <div class="mb-3">
-                <label for="nim" class="form-label">NIM</label>
-                <input type="text" class="form-control" name="nim" placeholder="Nomor Induk Mahasiswa">
+                <label for="username" class="form-label">Username (NIM/NIP)</label>
+                <input type="text" class="form-control" name="username" placeholder="Username (NIM/NIP)">
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
@@ -97,9 +120,6 @@ if (isset($_SESSION['nim'])) {
               </div>
               <div class="d-grid mb-4">
                 <button class="btn btn-primary" name='submit' type="submit">Masuk</button>
-              </div>
-              <div class="mb-3 text-center">
-                Belum punya akun? <a href="register.php" class='fs-6 link-primary'>Daftar</a>
               </div>
             </form>
           </div>

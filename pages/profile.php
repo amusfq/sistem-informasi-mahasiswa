@@ -1,47 +1,106 @@
 <div class="row">
-   <div class="col-md-3 border-right">
-      <div class="d-flex flex-column align-items-center text-center p-3">
-         <img class="rounded-circle mt-5 object-cover" width="150px" height="150px" src="https://st3.depositphotos.com/15648834/17930/v/600/depositphotos_179308454-stock-illustration-unknown-person-silhouette-glasses-profile.jpg">
-         <span class="font-weight-bold"><?= $_SESSION['nama_lengkap'] ?></span>
-      </div>
-   </div>
-   <?php
-        $success = false;
-        $error = false;
+  <div class="col-12 col-md-6">
+      <a class="btn btn-primary" href="/"><i class="fa fa-arrow-left"></i> Kembali</a>
+  </div>
+</div>
+<?php
+  $success = false;
+  $error = false;
+  $successFoto = false;
+  $errorFoto = false;
+  $errorFotoText = "";
 
-      if(isset($_POST['simpan'])) {
-        $query = "UPDATE biodata SET ";
-        $query .= "nama_lengkap='". $_POST['nama_lengkap'] ."', ";
-        $query .= "jenis_kelamin='". $_POST['jenis_kelamin'] ."', ";
-        $query .= "tempat_lahir='". $_POST['tempat_lahir'] ."', ";
-        $query .= "tanggal_lahir='". $_POST['tanggal_lahir'] ."', ";
-        $query .= "golongan_darah='". $_POST['golongan_darah'] ."', ";
-        $query .= "agama='". $_POST['agama'] ."', ";
-        $query .= "alamat='". $_POST['alamat'] ."', ";
-        $query .= "no_telepon='". $_POST['no_telepon'] ."'";
-        $query .= "WHERE nim='" . $_SESSION['nim'] . "'";
-        $result = $connect->query($query);
-        if ($result) {
-            $success = true;
-            $_SESSION['nama_lengkap'] = $_POST['nama_lengkap'];
-        } else {
-            $error = true;
-        }
-      }
-
-      $query = "SELECT biodata.*, prodi.nama_prodi, fakultas.nama_fakultas FROM biodata ";
-      $query .= "LEFT JOIN prodi ON biodata.id_prodi = prodi.id ";
-      $query .= "LEFT JOIN fakultas ON prodi.id_fakultas = fakultas.id ";
-      $query .= "WHERE nim='" . $_SESSION['nim'] . "'";
-      
+  if (isset($_POST['changeFoto'])) {
+    $fileName = "uploads/" . basename($_FILES['foto']['name']);
+    $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+    $file = "uploads/" . time() . "." . $ext;
+    $maxSize = 2097152;
+    $imgSize = getimagesize($_FILES['foto']['tmp_name']);
+    if (($_FILES['foto']['size'] >= $maxSize)) {
+      $errorFoto = true;
+      $errorFotoText = "Ukuran foto maksimal 2MB";
+    } else {
+      $connect->begin_transaction();
+      $query = "UPDATE biodata SET foto='$file' WHERE id_user = '". $_SESSION['id_user'] ."'";
       $result = $connect->query($query);
-      if ($result->num_rows > 0) {
-         $user = $result->fetch_assoc();
+      if ($result) {
+        if (move_uploaded_file($_FILES['foto']['tmp_name'], $file)) {
+          $successFoto = true;
+          $connect->commit();
+        } else {
+          $errorFoto = true;
+          $errorFotoText = "Foto gagal diperbarui";
+          $connect->rollback();
+        }
       } else {
-         header("location: login.php");
+        $errorFoto = true;
+        $errorFotoText = "Foto gagal diperbarui";
+        $connect->rollback();
       }
-   
-   ?>
+    }
+  }
+  if(isset($_POST['simpan'])) {
+    $query = "UPDATE biodata SET ";
+    $query .= "nama_lengkap='". $_POST['nama_lengkap'] ."', ";
+    $query .= "jenis_kelamin='". $_POST['jenis_kelamin'] ."', ";
+    $query .= "tempat_lahir='". $_POST['tempat_lahir'] ."', ";
+    $query .= "tanggal_lahir='". $_POST['tanggal_lahir'] ."', ";
+    $query .= "golongan_darah='". $_POST['golongan_darah'] ."', ";
+    $query .= "agama='". $_POST['agama'] ."', ";
+    $query .= "alamat='". $_POST['alamat'] ."', ";
+    $query .= "no_telepon='". $_POST['no_telepon'] ."'";
+    $query .= "WHERE id_user='" . $_SESSION['id_user'] . "'";
+    $result = $connect->query($query);
+    if ($result) {
+        $success = true;
+        $_SESSION['nama_lengkap'] = $_POST['nama_lengkap'];
+    } else {
+        $error = true;
+    }
+  }
+
+  $query = "SELECT biodata.*, users.username ";
+
+  if ($_SESSION['role'] == 'mahasiswa') {
+    $query .= ", prodi.nama_prodi, fakultas.nama_fakultas ";
+  }
+  $query .= "FROM users ";
+  $query .= "LEFT JOIN biodata ON biodata.id_user = users.id ";
+  if ($_SESSION['role'] == 'mahasiswa') {
+    $query .= "LEFT JOIN mahasiswa ON mahasiswa.id_user = users.id ";
+    $query .= "LEFT JOIN prodi ON mahasiswa.id_prodi = prodi.id ";
+    $query .= "LEFT JOIN fakultas ON prodi.id_fakultas = fakultas.id ";
+  }
+  $query .= "WHERE users.id='" . $_SESSION['id_user'] . "'";
+  $result = $connect->query($query);
+  if ($result->num_rows > 0) {
+      $user = $result->fetch_assoc();
+  } else {
+      header("location: login.php");
+  }
+?>
+<div class="row">
+   <div class="col-md-3 border-right">
+      <?php if ($successFoto) {?>
+        <div class="alert alert-success d-flex align-items-center" role="alert">
+            <i class="fas fa-check bi flex-shrink-0 me-2" width="24" height="24"></i>
+            <div><strong>Berhasil!</strong> Foto berhasil diperbarui</div>
+        </div>
+        <?php } ?>
+        <?php if ($errorFoto) {?>
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="fas fa-exclamation-triangle bi flex-shrink-0 me-2" width="24" height="24"></i>
+            <div><strong>Gagal!</strong> <?= $errorFotoText ?></div>
+        </div>
+        <?php } ?>
+        <form method="post" class="d-flex flex-column align-items-center text-center p-3" enctype="multipart/form-data">
+        <img class="rounded-circle mt-5 object-cover" width="150px" height="150px" src="<?= $user['foto'] ?>" id='previewFoto'>
+        <input type="file" name="foto" id="foto" class="hidden" accept='image/png,image/jpg,image/jpeg' onchange="handlePreview(this)">
+        <button class="btn btn-primary btn-sm hidden mt-2" id='btn-simpan' name='changeFoto'>Simpan</button>
+        <button class="btn btn-danger btn-sm hidden mt-2" id='btn-batal' onclick='handleCancel("<?= $foto ?>")'>Batal</button>
+        <label class="btn btn-primary btn-sm mt-2" type="button" for="foto" id='btn-ubah'> Ubah Foto</label>
+        </form>
+   </div>
    <div class="col-md-5 border-right">
       <div class="p-3">
          <div class="d-flex justify-content-between align-items-center mb-3">
@@ -65,8 +124,18 @@
          <form method="POST">
             <div class="row mt-2">
                 <div class="col-md-12 mb-2">
-                <label class="labels">NIM</label>
-                <input type="text" class="form-control" placeholder="Nomor Induk Mahasiswa" value="<?= $user['nim'] ?>" readonly>
+                <label class="labels">
+                <?php 
+                    if ($_SESSION['role'] == 'admin') {
+                        echo "Username";
+                    } else if ($_SESSION['role'] == 'mahasiswa'){
+                        echo "NIM";
+                    } else {
+                        echo "NIP";
+                    }
+                ?>
+                </label>
+                <input type="text" class="form-control" placeholder="Nomor Induk Mahasiswa" value="<?= $user['username'] ?>" readonly>
                 </div>
                 <div class="col-md-12 mb-2">
                 <label class="labels">Nama Lengkap</label>
@@ -120,6 +189,9 @@
                 <input type="text" class="form-control" placeholder="Nomor Telepon" name="no_telepon" value="<?= $user['no_telepon'] ?>">
                 </div>
             </div>
+            <?php
+                if ($_SESSION['role'] == 'mahasiswa') {
+            ?>
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="text-right">Informasi Akademik</h6>
             </div>
@@ -129,7 +201,7 @@
                 <input type="text" class="form-control" placeholder="Fakultas" value="<?= $user['nama_fakultas'] ?>" readonly>
                 </div>
                 <div class="col-md-12 mb-2">
-                <label class="labels">Prodi</label>
+                <label class="labels">Program Studi</label>
                 <input type="text" class="form-control" placeholder="Prodi" value="<?= $user['nama_prodi'] ?>" readonly>
                 </div>
                 <div class="col-md-12 mb-3">
@@ -137,6 +209,9 @@
                 <input type="text" class="form-control" placeholder="Status Mahasiswa" value="<?= ($user['status'] == 1) ? "Aktif" : "Tidak Aktif" ?>" readonly>
                 </div>
             </div>
+            <?php
+                }
+            ?>
             <div class="text-right">
                 <button class="btn btn-primary profile-button" type="submit" name='simpan'>Simpan Perubahan</button>
             </div>
@@ -162,10 +237,10 @@
             $errorText = 'Konfirmasi password tidak sama';
           } else {
               $errorPass = false;
-              $query = "SELECT nim FROM biodata WHERE nim='" . $_SESSION['nim'] . "' AND password='". $passwordLama ."'";
+              $query = "SELECT id FROM users WHERE id='" . $_SESSION['id_user'] . "' AND password='". $passwordLama ."'";
               $result = $connect->query($query);
               if ($result->num_rows > 0) {
-                  $query = "UPDATE biodata SET password='". $passwordBaru ."' WHERE nim='". $_SESSION['nim'] ."'";
+                  $query = "UPDATE users SET password='". $passwordBaru ."' WHERE id='". $_SESSION['id_user'] ."'";
                   $result = $connect->query($query);
                   if ($result) {
                     $successPass = true;

@@ -14,43 +14,69 @@
             </div>
             </a>
         </li>
-        <li class="<?= $page === 'matkul' ? 'active' : '' ?>">
-            <a href="index.php?page=matkul">
+        <?php
+            $menuAdmin = [
+                [
+                    "label" => "Data Mahasiswa",
+                    "icon" => "fa-users",
+                    "href" => "mahasiswa",
+                ],
+                [
+                    "label" => "Data Mata Kuliah",
+                    "icon" => "fa-clipboard-list",
+                    "href" => "matkul",
+                ],
+                [
+                    "label" => "Data Jadwal Kuliah",
+                    "icon" => "fa-list",
+                    "href" => "jadwal",
+                ],
+                [
+                    "label" => "Data Pengumuman",
+                    "icon" => "fa-bullhorn",
+                    "href" => "pengumuman",
+                ]
+            ];
+            if ($_SESSION['role'] == 'admin') {
+                foreach ($menuAdmin as $menu) {
+        ?>
+        <li class="<?= $page === $menu['href'] ? 'active' : '' ?>">
+            <a href="index.php?page=<?=$menu['href']?>">
                 <div class="row">
                     <div class='col-12 col-md-2 sidebar-item-icon' >
-                        <i class="fas fa-clipboard-list"></i>
+                        <i class="fas <?=$menu['icon']?>"></i>
                     </div>
-                    <span class="col-10">Mata Kuliah</span>
+                    <span class="col-10"><?=$menu['label']?></span>
                 </div>
             </a>
         </li>
-        <li class="<?= $page === 'khs' ? 'active' : '' ?>">
-            <a href="index.php?page=khs">
+        <?php
+                }
+            }
+            $menuMahasiswa = [
+                [
+                    "label" => "Data Mata Kuliah",
+                    "icon" => "fa-clipboard-list",
+                    "href" => "matkul",
+                ],
+            ];
+            if ($_SESSION['role'] == 'mahasiswa') {
+                foreach ($menuMahasiswa as $menu) {
+        ?>
+        <li class="<?= $page === $menu['href'] ? 'active' : '' ?>">
+            <a href="index.php?page=<?=$menu['href']?>">
                 <div class="row">
                     <div class='col-12 col-md-2 sidebar-item-icon' >
-                        <i class="fas fa-calendar-check"></i>
+                        <i class="fas <?=$menu['icon']?>"></i>
                     </div>
-                    <span class="col-10">Laporan KHS</span>
+                    <span class="col-10"><?=$menu['label']?></span>
                 </div>
             </a>
         </li>
-        <!-- <li>
-            <a href="#pageSubmenu" data-toggle="collapse" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle" aria-controls="pageSubmenu">
-                <i class="fas fa-copy"></i>
-                <span>Pages</span>
-            </a>
-            <ul class="collapse list-unstyled" id="pageSubmenu">
-                <li>
-                    <a href="#">Page 1</a>
-                </li>
-                <li>
-                    <a href="#">Page 2</a>
-                </li>
-                <li>
-                    <a href="#">Page 3</a>
-                </li>
-            </ul>
-        </li> -->
+        <?php
+                }
+            }
+        ?>
     </ul>
 
 </nav>

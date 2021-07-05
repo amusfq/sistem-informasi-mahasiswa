@@ -1,10 +1,12 @@
 <?php
 $user = [];
-$query = "SELECT biodata.*, YEAR(biodata.created_at) as angkatan, prodi.nama_prodi, fakultas.nama_fakultas, dosen.nama_dosen FROM biodata ";
-$query .= "LEFT JOIN prodi ON prodi.id = biodata.id_prodi ";
-$query .= "LEFT JOIN fakultas ON fakultas.id = prodi.id_fakultas ";
-$query .= "LEFT JOIN dosen ON dosen.nip = biodata.id_dosen ";
-$query .= "WHERE nim='". $_SESSION['nim'] ."'";
+$query = "SELECT users.username, biodata.*, mahasiswa.semester, YEAR(biodata.created_at) as angkatan, prodi.nama_prodi, fakultas.nama_fakultas, dosen.nama_dosen FROM users ";
+$query .= "LEFT JOIN biodata ON biodata.id_user = users.id ";
+$query .= "LEFT JOIN mahasiswa ON mahasiswa.id_user = users.id ";
+$query .= "LEFT JOIN prodi ON mahasiswa.id_prodi = prodi.id ";
+$query .= "LEFT JOIN fakultas ON prodi.id_fakultas = fakultas.id ";
+$query .= "LEFT JOIN dosen ON dosen.nip = mahasiswa.id_dosen ";
+$query .= "WHERE users.id='". $_SESSION['id_user'] ."'";
 $result = $connect->query($query);
 if ($result->num_rows > 0) {
     $user = $result->fetch_assoc();
@@ -19,7 +21,7 @@ if ($result->num_rows > 0) {
                 <div class="callout callout-info">
                     <div class="row">
                         <label class="col-md-3">NIM</label>
-                        <div class="col-md-3"><?= $user['nim'] ?></div>
+                        <div class="col-md-3"><?= $user['username'] ?></div>
                         <label class="col-md-3">Nama Mahasiswa</label>
                         <div class="col-md-3"><?= $user['nama_lengkap'] ?></div>
                     </div>
@@ -51,8 +53,8 @@ if ($result->num_rows > 0) {
                         $idMataKuliah = $_POST['selected_matkul'];
                         $query = "SELECT id FROM jadwal_kuliah WHERE id_mata_kuliah='".$idMataKuliah."'";
                         $result = $connect->query($query)->fetch_assoc();
-                        $query = "INSERT INTO jadwal_mahasiswa (id_jadwal_kuliah, id_mahasiswa, semester) ";
-                        $query .= "VALUES('".$result['id']."', '".$user['nim']."', '".$user['semester']."')";
+                        $query = "INSERT INTO jadwal_mahasiswa (id_jadwal_kuliah, id_user, semester) ";
+                        $query .= "VALUES('".$result['id']."', '".$_SESSION['id_user']."', '".$user['semester']."')";
                         $result = $connect->query($query);
                         if ($result) {
                             $successInsertMatkul = true;
@@ -112,7 +114,7 @@ if ($result->num_rows > 0) {
                     $query = "SELECT mata_kuliah.id, mata_kuliah.nama_mata_kuliah, mata_kuliah.semester FROM jadwal_mahasiswa ";
                     $query .= "LEFT JOIN jadwal_kuliah ON jadwal_kuliah.id = jadwal_mahasiswa.id_jadwal_kuliah ";
                     $query .= "LEFT JOIN mata_kuliah ON mata_kuliah.id = jadwal_kuliah.id_mata_kuliah ";
-                    $query .= "WHERE jadwal_mahasiswa.id_mahasiswa='".$user['nim']."' AND jadwal_mahasiswa.semester='".$user['semester']."'";
+                    $query .= "WHERE jadwal_mahasiswa.id_user='".$_SESSION['id_user']."' AND jadwal_mahasiswa.semester='".$user['semester']."'";
                     $result = $connect->query($query);
                     $availMatkul = [];
                     if ($result->num_rows > 0) {
@@ -166,7 +168,7 @@ if ($result->num_rows > 0) {
                             $query .= "LEFT JOIN jadwal_kuliah ON jadwal_kuliah.id = jadwal_mahasiswa.id_jadwal_kuliah ";
                             $query .= "LEFT JOIN mata_kuliah ON mata_kuliah.id = jadwal_kuliah.id_mata_kuliah  ";
                             $query .= "LEFT JOIN dosen ON dosen.nip = jadwal_kuliah.id_dosen ";
-                            $query .= "WHERE jadwal_mahasiswa.id_mahasiswa='". $user['nim'] ."' AND jadwal_mahasiswa.semester='". $user['semester'] ."' ";
+                            $query .= "WHERE jadwal_mahasiswa.id_user='". $_SESSION['id_user'] ."' AND jadwal_mahasiswa.semester='". $user['semester'] ."' ";
                             $result = $connect->query($query);
                             $totalSKS = 0;
                             if ($result->num_rows > 0) {
