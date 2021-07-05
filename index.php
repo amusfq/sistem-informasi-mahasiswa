@@ -99,6 +99,7 @@ include_once('./config/db.php');
           } else if ($page === 'profile') {
             $file = 'profile.php';
             $title = 'Data Pribadi - ';
+            $script = '<script src="assets/js/profile.js"></script>';
           } else {
             $file = '404.php';
             $title = '404 Not Found - ';
